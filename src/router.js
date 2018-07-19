@@ -1,21 +1,45 @@
-import Vue from 'vue'
-import Router from 'vue-router'
-import Home from './views/Home.vue'
-import About from './views/About.vue'
+import Vue from "vue";
+import Router from "vue-router";
+import Home from "./views/Home.vue";
+import Sites from "./views/Sites.vue";
+import Site from "./views/Site.vue";
+import Quizzes from "./views/Quizzes.vue";
+import Quiz from "./views/Quiz.vue";
+import Embeds from "./views/Embeds.vue";
 
-Vue.use(Router)
+Vue.use(Router);
 
 export default new Router({
   routes: [
     {
-      path: '/',
-      name: 'home',
+      path: "/",
+      name: "Home",
       component: Home
     },
     {
-      path: '/about',
-      name: 'about',
-      component: About
-    }
+      path: "/embeds",
+      name: "Embeds",
+      component: Embeds
+    },
+    {
+      path: "/quizzes",
+      name: "Quizzes",
+      component: Quizzes
+    },
+    /*{
+      path: "/quizzes/:quizID",
+      name: "quiz",
+      component: Quiz
+    },*/
+    {
+      path: "/sites",
+      name: "sites",
+      component: Sites
+    },
+    /*{
+      path: "/sites/:siteID",
+      name: "site",
+      component: Site
+    },*/
   ]
-})
+});

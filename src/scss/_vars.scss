@@ -1,0 +1,16 @@
+$fontBody : Tahoma, arial, sans-serif;
+$fontTitle : Tahoma, arial, sans-serif;
+$sansSerif : Tahoma, arial, sans-serif;
+
+$font : #333;
+$title : #333;
+$primary : #356d99;
+$secondary : #0A3348;
+$link : #396BA7;
+$link_hover: #184273;
+
+$desktop: 48em;
+$tablet: 34em;
+$mobile: 24em;
+
+@import "mixins";

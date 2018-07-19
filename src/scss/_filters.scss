@@ -1,0 +1,23 @@
+.filter__input--tiny {
+  width: 50px;
+  min-width: 50px;
+  max-width: 50px;
+}
+.top-filters {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.show-filters {
+  margin-left: 40px;
+}
+
+.extra-filters {
+  border: 1px solid #ddd;
+  padding: 20px;
+
+  label {
+    margin-bottom: 15px;
+  }
+}

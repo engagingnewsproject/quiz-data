@@ -1,0 +1,70 @@
+@import "vars";
+@import "reset";
+@import "typography";
+
+html {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+*, *:before, *:after {
+  -webkit-box-sizing: inherit;
+  -moz-box-sizing: inherit;
+  box-sizing: inherit;
+  }
+// global styles
+body {
+    background: #fff;
+    padding: 2em 1em;
+
+    @mixin media($tablet) {
+        padding: 2em;
+    }
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto 2rem;
+}
+
+nav a {
+  color: $secondary;
+  margin-right: 10px;
+  .router-link-exact-active {
+    color: $primary;
+  }
+}
+
+.btn {
+    padding: 0.6rem 1rem;
+    font-size: .9em;
+    border: none;
+    border-radius: 3px;
+    color: #fff;
+    background: #20A581;
+
+    &:hover {
+      background: #20A581;
+  }
+}
+
+.btn--icon {
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: none;
+}
+
+form {
+  margin-bottom: 30px;
+}
+
+@keyframes fadein {
+    from {
+        margin-top: -2em;
+        opacity: 0;
+     }
+    to   {
+        margin-top: 0;
+        opacity: 1; }
+}

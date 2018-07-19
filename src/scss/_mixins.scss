@@ -1,0 +1,63 @@
+@mixin media($width) {
+    // Otherwise, output it using a regular media query
+    @media screen and (min-width: $width) {
+        @content;
+    }
+}
+
+@mixin mobile-only {
+  @media (max-width: $tablet) {
+    @content;
+  }
+}
+
+@mixin tablet-only {
+  @media (min-width: $tablet) and (max-width: $desktop - .01em) {
+    @content;
+  }
+}
+
+@mixin everything-but-desktop {
+  @media (max-width: $desktop - .01em) {
+    @content;
+  }
+}
+
+@mixin grid($repeat: 12, $width: 1fr) {
+    display: grid;
+    grid-template-columns: repeat($repeat, $width);
+    grid-column-gap: 20px;
+    grid-row-gap: 20px;
+}
+
+@mixin cardsGrid {
+  margin: 0 auto;
+  width: 100%;
+  animation: fadein 0.42s;
+
+  @include media($mobile) {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-gap: 20px;
+  }
+}
+
+@mixin card {
+  background: #fff;
+  border-bottom: 2px solid #ccc;
+  padding: 1rem;
+}
+
+
+@mixin tableCounter($counter: 'tableCounter') {
+  tbody {
+    counter-reset: $counter;
+  }
+  tr:before {
+    counter-increment: $counter;                 
+    content: counter($counter);  
+    font-size: 0.8rem;
+    color: #888;
+  }
+}
+
