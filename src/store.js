@@ -22,6 +22,7 @@ export default new Vuex.Store({
     error: false,
     sites: [],
     quizzes: [],
+    totals: [],
     embeds: []
   },
   mutations: {
@@ -43,8 +44,12 @@ export default new Vuex.Store({
       state.quizzes = quizzes
     },
     setSites: function(state, sites) {
-      console.log("sites set", sites)
+      console.log("sites set")
       state.sites = sites
+    },
+    setTotals: function(state, totals) {
+      console.log("totals set")
+      state.totals = totals
     }
   },
   getters: {
@@ -52,12 +57,38 @@ export default new Vuex.Store({
     fetching: state => state.fetching,
     error: state => state.error,
     server: state => state.server,
+    totals: state => state.totals,
     quizzes: state => state.quizzes,
-    quiz: (state, getters) => ID => {
-      return getters.quizzes.find(quiz => quiz.ID === ID);
+    quizIndexBy: (state, getters) => (name, val) => {
+      return getters.indexBy(getters.quizzes, name, val);
+    },
+    getQuiz: (state, getters) => ID => {
+      return getters.quizzes[getters.quizIndexBy('ID', ID)];
     },
     quizIndexBy: (state, getters) => (name, val) => {
       return getters.indexBy(getters.quizzes, name, val);
+    },
+    getQuizSites: (state, getters) => (quizID) => {
+      let quizSites = []
+      let sites = getters.sites
+      quizID = parseInt(quizID)
+
+      for(let i = 0; i < sites.length; i++) {
+        if(sites[i].quizIDs.includes(quizID)) {
+          quizSites.push(sites[i])
+        }
+      } 
+      return quizSites;
+    },
+    getQuizEmbeds: (state, getters) => (quizID) => {
+      let quizEmbeds = []
+      let embeds = getters.embeds
+      for(let i = 0; i < embeds.length; i++) {
+        if(embeds[i].quizID == quizID) {
+          quizEmbeds.push(embeds[i])
+        }
+      } 
+      return quizEmbeds;
     },
     publishedQuizzes: (state, getters) => {
       return getters.quizzes.filter(function(quiz) {
@@ -116,33 +147,7 @@ export default new Vuex.Store({
           if(filter.val >= obj[prop]) return true
         }
         else if(filter.operator == '<=') {
-          if(prop === 'views' && filter.val <= obj[prop]) {
-            console.log('views', obj[prop])
-            console.log('filter', filter.val)
-          }
-          
           if(filter.val <= obj[prop]) return true
-        }
-        return false
-      })
-    },
-    runLengthFilter: (state, getters) => (objArray, prop, filter) => {
-      if(filter.val == '' || filter.val == null || filter.val == undefined) {
-        return objArray
-      }
-      
-      return objArray.filter(function(obj) {
-        if(filter.operator == '==') {
-          if(obj[prop].length == filter.val) return true
-        }
-        else if(filter.operator == '!=') {
-          if(obj[prop].length != filter.val) return true
-        }
-        else if(filter.operator == '>=') {
-          if(filter.val >= obj[prop].length) return true
-        }
-        else if(filter.operator == '<=') {
-          if(filter.val <= obj[prop].length) return true
         }
         return false
       })
@@ -188,8 +193,8 @@ export default new Vuex.Store({
       return +(((getters.quizTotal(name)/getters.quizTotal('views')) * 100).toFixed(2))
     },
     sites: state => state.sites,
-    site: (state, getters) => ID => {
-      return getters.sites.find(site => site.ID === ID);
+    getSite: (state, getters) => ID => {
+      return getters.sites[getters.siteIndexBy('ID', ID)];
     },
     siteIndexBy: (state, getters) => (name, val) => {
       return getters.indexBy(getters.sites, name, val);
@@ -199,7 +204,29 @@ export default new Vuex.Store({
         return site.isDev.includes('0')
       })
     },
+    getSiteQuizzes: (state, getters) => (siteID) => {
+      let quizzes = []
+      let site = getters.getSite(siteID)
+      for(let i = 0; i < site.quizIDs.length; i++) {
+        quizzes.push(getters.getQuiz(site.quizIDs[i]))
+      } 
+      return quizzes;
+    },
+    getSiteEmbeds: (state, getters) => (siteID) => {
+      let embeds = []
+      let site = getters.getSite(siteID)
+      for(let i = 0; i < site.embedIDs.length; i++) {
+        embeds.push(getters.embed(site.embedIDs[i]))
+      } 
+      return embeds;
+    },
     embeds: state => state.embeds,
+    embedIndexBy: (state, getters) => (name, val) => {
+      return getters.indexBy(state.embeds, name, val);
+    },
+    embed: (state, getters) => ID => {
+      return state.embeds[getters.embedIndexBy('ID', ID)];
+    },
     /**
      * Powers most all of the retrieval of data from the tree
      * Searches an array for a key that equals a certain value
@@ -236,6 +263,7 @@ export default new Vuex.Store({
       return context.dispatch("fetchSites")
               .then(() => context.dispatch("fetchQuizzes"))
               .then(() => context.dispatch("fetchEmbeds"))
+              .then(() => context.dispatch("fetchTotals"))
       
     },
     fetchEmbeds(context) {
@@ -356,6 +384,27 @@ export default new Vuex.Store({
           }
 
           context.commit("setSites", sites);
+        })
+        .catch(error => {
+          console.error(error);
+          context.dispatch("error", true);
+        })
+        .finally(() => {
+          context.dispatch("fetching", false);
+        });
+    },
+    fetchTotals(context) {
+      console.log("fetching totals");
+      context.dispatch("fetching", true);
+
+      return context.getters
+        .server("/enp-quiz/v1/totals")
+        .then(response => {
+          console.log("fetched totals");
+          let totals = response.data
+          totals.responses.correctPercentage = +(((totals.responses.correct/totals.responses.total) * 100).toFixed(2))
+          totals.responses.incorrectPercentage = +(((totals.responses.incorrect/totals.responses.total) * 100).toFixed(2))
+          context.commit("setTotals", totals);
         })
         .catch(error => {
           console.error(error);

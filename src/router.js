@@ -26,20 +26,20 @@ export default new Router({
       name: "Quizzes",
       component: Quizzes
     },
-    /*{
+    {
       path: "/quizzes/:quizID",
       name: "quiz",
       component: Quiz
-    },*/
+    },
     {
       path: "/sites",
       name: "sites",
       component: Sites
     },
-    /*{
+    {
       path: "/sites/:siteID",
       name: "site",
       component: Site
-    },*/
+    },
   ]
 });

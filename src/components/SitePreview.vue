@@ -37,7 +37,7 @@
         <tr
           v-for="site in sites"
           v-bind:site="site">
-          <td>{{ site.ID }}</td>
+          <td><router-link :to="{ name: 'site', params: { siteID: site.ID }}">{{ site.ID }}</router-link></td>
           <td><a :href="site.url" class="site__link">{{ site.name }}</a></td>
           <td>{{ site.views }}</td>
           <td>{{ site.embeds }}</td>

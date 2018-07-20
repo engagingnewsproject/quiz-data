@@ -16,6 +16,24 @@
     <QuizTotals 
       v-if="quizzes.length > 0" 
       v-bind:quizzes="quizzes"></QuizTotals>
+
+    <h3>Responses</h3>
+    <table>
+      <tbody>
+        <tr>
+          <th>Total Responses</th>
+          <td>{{ totals.responses.total }}</td>
+        </tr>
+        <tr>
+          <th>Correct Responses</th>
+          <td>{{ totals.responses.correct }} | {{ totals.responses.correctPercentage }}%</td>
+        </tr>
+        <tr>
+          <th>Incorrect Responses</th>
+          <td>{{ totals.responses.incorrect }} | {{ totals.responses.incorrectPercentage }}%</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </template>
 
@@ -35,7 +53,7 @@ export default {
     QuizTotals
   },
   computed: {
-    ...mapGetters(["nonDevSites", "publishedQuizzes"])
+    ...mapGetters(["nonDevSites", "publishedQuizzes", "totals"])
   }
 
 };

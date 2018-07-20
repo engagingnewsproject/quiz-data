@@ -7,7 +7,7 @@
           <th>Quizzes</th>
           <td>{{ quizzes.length }}</td>
         </tr>
-        <tr v-if="publishedQuizzes.length ">
+        <tr v-if="publishedQuizzes.length">
           <th>Published Quizzes</th>
           <td>{{ publishedQuizzes.length }}</td>
         </tr>
@@ -21,19 +21,11 @@
         </tr>
         <tr>
           <th>Total Starts</th>
-          <td>{{ quizTotal('starts') }}</td>
-        </tr>
-        <tr>
-          <th>Start Percentage</th>
-          <td>{{ quizPercentage('starts') }}%</td>
+          <td>{{ quizTotal('starts') }} | {{ quizPercentage('starts') }}%</td>
         </tr>
         <tr>
           <th>Total Finishes</th>
-          <td>{{ quizTotal('finishes') }}</td>
-        </tr>
-        <tr>
-          <th>Finish Percentage</th>
-          <td>{{ quizPercentage('finishes') }}%</td>
+          <td>{{ quizTotal('finishes') }} | {{ quizPercentage('finishes') }}%</td>
         </tr>
       </tbody>
     </table>
@@ -44,8 +36,7 @@
 export default {
   name: "QuizTotals",
   props: {
-    quizzes: Array,
-    title: String
+    quizzes: Array
   },
   methods: {
     quizTotal: function(name) {
@@ -62,6 +53,7 @@ export default {
   },
   computed: {
     publishedQuizzes: function() {
+      console.log('quizzes filter', this.quizzes)
       return this.quizzes.filter(function(quiz) {
         return quiz.status === 'published'
       })

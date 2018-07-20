@@ -45,8 +45,8 @@
           <td>{{ embed.ID }}</td>
           <td><a :href="embed.url" class="embed__link">{{ embed.url }}</a></td>
           <td>{{ embed.views }}</td>
-          <td>{{ embed.siteID }}</td>
-          <td>{{ embed.quizID }}</td>
+          <td><router-link :to="{ name: 'site', params: { siteID: embed.siteID }}">{{ embed.siteID }}</router-link></td>
+          <td><router-link :to="{ name: 'quiz', params: { quizID: embed.quizID }}">{{ embed.quizID }}</router-link></td>
           <td>{{ embed.createdAt }}</td>
           <td>{{ embed.updatedAt }}</td>
           <td>{{ embed.isDev }}</td>

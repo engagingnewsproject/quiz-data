@@ -50,7 +50,7 @@
           v-for="quiz in quizzes"
           v-bind:key="quiz.id"
           v-bind:quiz="quiz">
-          <td>{{ quiz.ID }}</td>
+          <td><router-link :to="{ name: 'quiz', params: { quizID: quiz.ID }}">{{ quiz.ID }}</router-link></td>
           <td><a :href="'https://mediaengagement.org/quiz-embed/'+quiz.ID" class="quiz__link">{{ quiz.title }}</a></td>
           <td>{{ quiz.status }}</td>
           <td>{{ quiz.questions }}</td>
