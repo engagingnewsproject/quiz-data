@@ -1,6 +1,8 @@
 import Vue from "vue";
 import Router from "vue-router";
 import Home from "./views/Home.vue";
+import Domains from "./views/Domains.vue";
+import Domain from "./views/Domain.vue";
 import Sites from "./views/Sites.vue";
 import Site from "./views/Site.vue";
 import Quizzes from "./views/Quizzes.vue";
@@ -15,6 +17,16 @@ export default new Router({
       path: "/",
       name: "Home",
       component: Home
+    },
+    {
+      path: "/domains",
+      name: "domains",
+      component: Domains
+    },
+    {
+      path: "/domain/:domainID",
+      name: "domain",
+      component: Domain
     },
     {
       path: "/embeds",

@@ -1,23 +1,16 @@
 <template>
-  <div class="view view--sites">
-    <p class="hint">Each individual subdomain of a domain is counted as a site. For example, the domain "nytimes" may have sites under https://www.nytimes.com, http://nytimes.com. http://m.nytimes.com, etc. Each of these subdomains (www., m., etc) gets counted as a separate site.</p>
+  <div class="view view--domains">
+    <p class="hint">Domains are counted as one per "domain" or "root url." For example, https://www.nytimes.com and https://nytimes.com would count as one domain (nytimes.com) and two sites. No Dev sites are included here.</p>
     <div class="filter">
       <form class="filters">
         <div class="top-filters">
-          <label>Search Sites<br/>
+          <label>Search Domains<br/>
             <input v-model="filters.search.val" class="filter__input" type="text" />
           </label>
           <span>
           <button class="btn show-filters" v-on:click.prevent="toggleFilters">{{ showFilters ? 'Hide' : 'Show'}} Filters</button></span>
         </div>
         <div class="extra-filters" v-if="showFilters">
-          <label>Dev Sites<br/>
-            <select v-model="filters.keys.isDev.val">
-              <option value="0">Exclude Dev Sites</option>
-              <option value="">Include Dev Sites</option>
-              <option value="1">Dev Sites Only</option>
-            </select>
-          </label>
           <label>At least <input v-model="filters.keys.quizzes.val" class="filter__input filter__input--tiny" type="number" /> Quizzes
           </label>
           <label>At least <input v-model="filters.keys.views.val" class="filter__input filter__input--tiny" type="number" /> Views
@@ -35,31 +28,31 @@
       </form>
     </div>
 
-    <section class="sites" v-if="filteredSites.length > 0">
+    <section class="domains" v-if="filteredDomains.length > 0">
 
-      <SiteTotals 
-        v-bind:sites="filteredSites"></SiteTotals>
+      <DomainTotals 
+        v-bind:domains="filteredDomains"></DomainTotals>
 
-      <SitePreview 
-        v-bind:sites="filteredSites"
+      <DomainPreview 
+        v-bind:domains="filteredDomains"
         v-bind:embeds="embeds"
         v-bind:quizzes="quizzes"
-        v-bind:loading="loading"></SitePreview>
+        v-bind:loading="loading"></DomainPreview>
     </section>
-    <section class="no-sites" v-else>
-      No sites found for search "{{ filters.search.val }}" with these filters.
+    <section class="no-domains" v-else>
+      No domains found for search "{{ filters.search.val }}" with these filters.
     </section>
   </div>
 </template>
 
 <script>
 // @ is an alias to /src
-import SitePreview from "@/components/SitePreview.vue";
-import SiteTotals from "@/components/SiteTotals.vue";
+import DomainPreview from "@/components/DomainPreview.vue";
+import DomainTotals from "@/components/DomainTotals.vue";
 import { mapGetters } from "vuex";
 
 export default {
-  name: "sites",
+  name: "domains",
   data: function() {
     return {
       loading: Boolean,
@@ -70,11 +63,6 @@ export default {
           keys: ['url', 'name']
         },
         keys: {
-          isDev: {
-            val: '0',
-            operator: '==',
-            type: 'match'
-          },
           quizzes: {
             val: 0,
             operator: '<=',
@@ -100,8 +88,8 @@ export default {
     };
   },
   components: {
-    SitePreview,
-    SiteTotals
+    DomainPreview,
+    DomainTotals
   },
   created() {
     // fetch the data when the view is created and the data is
@@ -118,7 +106,7 @@ export default {
     },
     fetchData() {
       // only fetch if we need to
-      if(this.sites.length == 0) {
+      if(this.domains.length == 0) {
         this.loading = true
         console.log('fetching data')
         return this.$store.dispatch("fetchAllData").then(() => this.loading = false);
@@ -129,11 +117,10 @@ export default {
     }
   },
   computed: {
-    filteredSites: function() {
-      // return this.filter(this.sites, this.filters);
-      return this.filter(this.sites, this.filters)
+    filteredDomains: function() {
+      return this.filter(this.domains, this.filters)
     },
-    ...mapGetters(["error", "sites", "quizzes", "nonDevSites","embeds", "server", "filter"])
+    ...mapGetters(["error", "domains", "sites", "quizzes", "nonDevSites","embeds", "server", "filter"])
   }
 };
 </script>

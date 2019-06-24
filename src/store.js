@@ -20,6 +20,7 @@ export default new Vuex.Store({
     loading: true,
     fetching: false,
     error: false,
+    domains: [],
     sites: [],
     quizzes: [],
     totals: [],
@@ -34,6 +35,10 @@ export default new Vuex.Store({
     },
     setFetching: function(state, val) {
       state.fetching = val
+    },
+    setDomains: function(state, domains) {
+      console.log("domains set")
+      state.domains = domains
     },
     setEmbeds: function(state, embeds) {
       console.log("embeds set")
@@ -58,6 +63,7 @@ export default new Vuex.Store({
     error: state => state.error,
     server: state => state.server,
     totals: state => state.totals,
+    domains: state => state.domains,
     quizzes: state => state.quizzes,
     quizIndexBy: (state, getters) => (name, val) => {
       return getters.indexBy(getters.quizzes, name, val);
@@ -192,6 +198,36 @@ export default new Vuex.Store({
       let percentage = 0;
       return +(((getters.quizTotal(name)/getters.quizTotal('views')) * 100).toFixed(2))
     },
+    getDomain: (state, getters) => ID => {
+      return getters.domains[getters.domainIndexBy('ID', ID)];
+    },
+    getDomainQuizzes: (state, getters) => (domainID) => {
+      let quizzes = []
+      let domain = getters.getDomain(domainID)
+      for(let i = 0; i < domain.quizIDs.length; i++) {
+        quizzes.push(getters.getQuiz(domain.quizIDs[i]))
+      } 
+      return quizzes;
+    },
+    getDomainEmbeds: (state, getters) => (domainID) => {
+      let embeds = []
+      let domain = getters.getDomain(domainID)
+      for(let i = 0; i < domain.embedIDs.length; i++) {
+        embeds.push(getters.embed(domain.embedIDs[i]))
+      } 
+      return embeds;
+    },
+    getDomainSites: (state, getters) => (domainID) => {
+      let sites = []
+      let domain = getters.getDomain(domainID)
+      for(let i = 0; i < domain.siteIDs.length; i++) {
+        sites.push(getters.getSite(domain.siteIDs[i]))
+      } 
+      return sites;
+    },
+    domainIndexBy: (state, getters) => (name, val) => {
+      return getters.indexBy(getters.domains, name, val);
+    },
     sites: state => state.sites,
     getSite: (state, getters) => ID => {
       return getters.sites[getters.siteIndexBy('ID', ID)];
@@ -261,10 +297,76 @@ export default new Vuex.Store({
     fetchAllData(context) {
       
       return context.dispatch("fetchSites")
-              .then(() => context.dispatch("fetchQuizzes"))
-              .then(() => context.dispatch("fetchEmbeds"))
-              .then(() => context.dispatch("fetchTotals"))
+      .then(() => context.dispatch("fetchQuizzes"))
+      .then(() => context.dispatch("fetchEmbeds"))
+      .then(() => context.dispatch("fetchDomains"))
+      .then(() => context.dispatch("fetchTotals"))
+              
       
+    },
+    fetchDomains(context) {
+      console.log("fetching domains");
+      context.dispatch("fetching", true);
+
+      return context.getters
+        .server("/enp-quiz/v1/domains")
+        .then(response => {
+          console.log("fetched domains");
+          let enp_domains = response.data;
+          let domains = [];
+
+          for (var i = 0; i < enp_domains.length; i++) {
+            // remap the domains
+            domains[i] = {
+              ID: enp_domains[i].embed_domain_id,
+              name: enp_domains[i].embed_domain_name,
+              url: enp_domains[i].embed_domain_url,
+              owner: enp_domains[i].embed_domain_type_ids,
+              siteIDs: enp_domains[i].embed_domain_site_ids,
+              sites: enp_domains[i].embed_domain_site_ids.length,
+              embedIDs: [],
+              embeds: 0,
+              quizIDs: [],
+              quizzes: 0,
+              views: 0,
+              createdAt: enp_domains[i].embed_domain_created_at,
+              updatedAt: enp_domains[i].embed_domain_updated_at
+            }
+
+            for (var j = 0; j < domains[i].siteIDs.length; j++) {
+
+              // set the info off of the sites data
+              // find the site
+              let site = context.getters.getSite(domains[i].siteIDs[j])
+              
+              domains[i].quizIDs = site.quizIDs
+              // increase the total quizzes
+              domains[i].quizzes += site.quizzes
+
+              domains[i].embedIDs = site.embedIDs
+              // increase the total embeds
+              domains[i].embeds += site.embeds
+
+              // increase the total view counts
+              domains[i].views += site.views
+              
+            }
+
+          }
+
+          context.commit("setDomains", domains);
+
+          // Sort them by created at
+          context.dispatch("sort", {type: 'domains', sortBy: 'createdAt', order: 'asc'})
+
+        })
+        .catch(error => {
+          console.error(error);
+          context.dispatch("error", true);
+        })
+        .finally(() => {
+          context.dispatch("fetching", false);
+        });
     },
     fetchEmbeds(context) {
       console.log("fetching embeds");
@@ -441,6 +543,7 @@ export default new Vuex.Store({
               }
             )
       setter = 'set' + val.type.charAt(0).toUpperCase() + val.type.substr(1)
+      
       context.commit(setter, vals)
     },
     compareValues: function(context, vals) {

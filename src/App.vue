@@ -9,6 +9,7 @@
     <h1 class="app__title">Quiz Creator Data</h1>
       <nav>
         <router-link to="/">Home</router-link>
+        <router-link to="/domains">Domains</router-link>
         <router-link to="/sites">Sites</router-link>
         <router-link to="/quizzes">Quizzes</router-link>
         <router-link to="/embeds">Embeds</router-link>
