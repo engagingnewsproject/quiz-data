@@ -1,8 +1,12 @@
 <template>
   <div class="site-totals">
-    <h3>Site Totals</h3>
+    <h3>Site Totals{{ listModeLabel }}</h3>
     <table>
       <tbody>
+        <tr>
+          <th>Sites in view</th>
+          <td>{{ sites.length }}</td>
+        </tr>
         <tr>
           <th>Production Sites</th>
           <td>{{ nonDevSites.length }}</td>
@@ -33,12 +37,19 @@ export default {
   name: "SiteTotals",
   props: {
     sites: Array,
-    title: String
-  },
-  methods: {
-    
+    title: String,
+    listMode: {
+      type: String,
+      default: "all"
+    }
   },
   computed: {
+    listModeLabel: function() {
+      if (this.listMode === "candidates") {
+        return " (News candidates)";
+      }
+      return "";
+    },
     nonDevSites: function() {
       return this.sites.filter(function(site) {
         return site.isDev == 0

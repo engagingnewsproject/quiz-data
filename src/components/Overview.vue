@@ -1,10 +1,38 @@
 <template>
   <div class="view overview--view">
+    <p class="overview-note">
+      News candidates are filtered from all embed hosts using CME research rules (June 2026).
+      Confirm each site before using in investor reporting.
+    </p>
     <table>
       <tbody>
         <tr>
+          <th>Total embed sites</th>
+          <td>{{ siteListCounts.total }}</td>
+        </tr>
+        <tr>
           <th>Sites (Non-Dev)</th>
-          <td>{{ nonDevSites.length }}</td>
+          <td>{{ siteListCounts.nonDev }}</td>
+        </tr>
+        <tr>
+          <th>News candidates</th>
+          <td>{{ siteListCounts.candidates }}</td>
+        </tr>
+        <tr>
+          <th>Confirmed news</th>
+          <td>{{ siteListCounts.confirmed }}</td>
+        </tr>
+        <tr>
+          <th>Pending review</th>
+          <td>{{ siteListCounts.pending }}</td>
+        </tr>
+        <tr>
+          <th>Excluded</th>
+          <td>{{ siteListCounts.excluded }}</td>
+        </tr>
+        <tr v-if="siteListCounts.unmatchedCandidates > 0">
+          <th>Unmatched candidates</th>
+          <td>{{ siteListCounts.unmatchedCandidates }}</td>
         </tr>
         <tr>
           <th>Embeds</th>
@@ -17,8 +45,8 @@
       v-if="quizzes.length > 0" 
       v-bind:quizzes="quizzes"></QuizTotals>
 
-    <h3>Responses</h3>
-    <table>
+    <h3 v-if="hasResponseTotals">Responses</h3>
+    <table v-if="hasResponseTotals">
       <tbody>
         <tr>
           <th>Total Responses</th>
@@ -43,19 +71,23 @@ import { mapGetters } from "vuex";
 import QuizTotals from "@/components/QuizTotals.vue";
 
 export default {
-  name: "home",
-  props: {
-    sites: Array,
-    quizzes: Array,
-    embeds: Array
-  },
+  name: "Overview",
   components: {
     QuizTotals
   },
   computed: {
-    ...mapGetters(["nonDevSites", "publishedQuizzes", "totals"])
+    hasResponseTotals: function() {
+      return this.totals && this.totals.responses;
+    },
+    ...mapGetters([
+      "nonDevSites",
+      "publishedQuizzes",
+      "totals",
+      "siteListCounts",
+      "embeds",
+      "quizzes"
+    ])
   }
-
 };
 </script>
 
@@ -63,5 +95,11 @@ export default {
 <style scoped lang="scss">
 @import "../scss/_vars.scss";
 @import "../scss/_table.scss";
+
+.overview-note {
+  margin-bottom: 1rem;
+  max-width: 40rem;
+  line-height: 1.4;
+}
 
 </style>

@@ -6,32 +6,40 @@
           <label>Search Embeds<br/>
             <input v-model="filters.search.val" class="filter__input" type="text" />
           </label>
-          <span>
-          <button class="btn show-filters" v-on:click.prevent="toggleFilters">{{ showFilters ? 'Hide' : 'Show'}} Filters</button></span>
         </div>
-        <div class="extra-filters" v-if="showFilters">
-          <label>Dev Embeds<br/>
-            <select v-model="filters.keys.isDev.val">
+        <div class="extra-filters">
+          <label class="extra-filters__item">
+            Dev Embeds
+            <select v-model="filters.keys.isDev.val" class="filter__input">
               <option value="0">Exclude Dev Embeds</option>
               <option value="">Include Dev Embeds</option>
               <option value="1">Dev Embeds Only</option>
             </select>
           </label>
-          <label>At least <input v-model="filters.keys.views.val" class="filter__input filter__input--tiny" type="number" /> Views
+          <label class="extra-filters__item">
+            At least
+            <input v-model="filters.keys.views.val" class="filter__input filter__input--tiny" type="number" />
+            Views
           </label>
-          <label>Quiz ID = <input v-model="filters.keys.quizID.val" class="filter__input filter__input--tiny" type="number" />
+          <label class="extra-filters__item">
+            Quiz ID =
+            <input v-model="filters.keys.quizID.val" class="filter__input filter__input--tiny" type="number" />
           </label>
-          <label>Site ID = <input v-model="filters.keys.siteID.val" class="filter__input filter__input--tiny" type="number" />
+          <label class="extra-filters__item">
+            Site ID =
+            <input v-model="filters.keys.siteID.val" class="filter__input filter__input--tiny" type="number" />
           </label>
-          <label>Added 
-            <select v-model="filters.keys.createdAt.operator">
+          <label class="extra-filters__item">
+            Added
+            <select v-model="filters.keys.createdAt.operator" class="filter__input filter__input--operator">
               <option value="<=">After</option>
               <option value=">=">Before</option>
             </select>
             <input v-model="filters.keys.createdAt.val" class="filter__input filter__input--date" type="date" />
           </label>
-          <label>Updated 
-            <select v-model="filters.keys.updatedAt.operator">
+          <label class="extra-filters__item">
+            Updated
+            <select v-model="filters.keys.updatedAt.operator" class="filter__input filter__input--operator">
               <option value="<=">After</option>
               <option value=">=">Before</option>
             </select>
@@ -65,8 +73,7 @@ export default {
   data: function() {
     return {
       search: "",
-      loading: Boolean,
-      showFilters: false,
+      loading: false,
       filters: {
         search: {
           val: '',
@@ -122,25 +129,25 @@ export default {
   },
   methods: {
     fetchData() {
-      // only fetch if we need to
-      if(this.embeds.length == 0) {
-        this.loading = true
-        console.log('fetching data')
-        return this.$store.dispatch("fetchAllData").then(() => this.loading = false);
-      } else {
-        console.log('already have data')
-        this.loading = false
+      if (this.embeds.length === 0) {
+        this.loading = true;
+        return this.$store
+          .dispatch("fetchAllData")
+          .then(() => {
+            this.loading = false;
+          })
+          .catch(() => {
+            this.loading = false;
+          });
       }
-    },
-    toggleFilters() {
-      this.showFilters = !this.showFilters
+      this.loading = false;
     }
   },
   computed: {
     filteredEmbeds: function() {
       return this.filter(this.embeds, this.filters)
     },
-    ...mapGetters(["error", "embeds", "filter", "nonDevEmbeds"])
+    ...mapGetters(["error", "embeds", "filter"])
   }
 };
 </script>
@@ -151,5 +158,30 @@ export default {
 @import "../scss/_table.scss";
 @import "../scss/_filters.scss";
 
+.extra-filters {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  overflow-x: auto;
+  padding: 12px 16px;
+
+  label {
+    margin-bottom: 0;
+  }
+}
+
+.extra-filters__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.filter__input--operator {
+  width: auto;
+  min-width: 4.5rem;
+}
 </style>
 

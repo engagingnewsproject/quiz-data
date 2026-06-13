@@ -66,7 +66,7 @@ export default {
   name: "Quizzes",
   data: function() {
     return {
-      loading: Boolean,
+      loading: false,
       showFilters: false,
       filters: {
         search: {

@@ -1,7 +1,29 @@
 <template>
   <div class="embeds" v-if="loading == false">
     <h3>Embeds</h3>
-    <p>{{ embeds.length}} Found</p>
+    <p>
+      {{ embeds.length }} found.
+      <span v-if="embeds.length > pageSize">
+        Showing {{ rangeStart }}–{{ rangeEnd }}.
+      </span>
+    </p>
+    <div class="pagination" v-if="totalPages > 1">
+      <button
+        type="button"
+        class="btn"
+        v-bind:disabled="page <= 1"
+        v-on:click="page = page - 1">
+        Previous
+      </button>
+      <span class="pagination__label">Page {{ page }} of {{ totalPages }}</span>
+      <button
+        type="button"
+        class="btn"
+        v-bind:disabled="page >= totalPages"
+        v-on:click="page = page + 1">
+        Next
+      </button>
+    </div>
     <table class="embeds__table">
       <thead>
         <th>ID
@@ -39,9 +61,8 @@
       </thead>
       <tbody>
         <tr
-          v-for="embed in embeds"
-          v-bind:key="embed.id"
-          v-bind:embed="embed">
+          v-for="embed in pagedEmbeds"
+          v-bind:key="embed.ID">
           <td>{{ embed.ID }}</td>
           <td><a :href="embed.url" class="embed__link">{{ embed.url }}</a></td>
           <td>{{ embed.views }}</td>
@@ -53,6 +74,23 @@
         </tr>
       </tbody>
     </table>
+    <div class="pagination" v-if="totalPages > 1">
+      <button
+        type="button"
+        class="btn"
+        v-bind:disabled="page <= 1"
+        v-on:click="page = page - 1">
+        Previous
+      </button>
+      <span class="pagination__label">Page {{ page }} of {{ totalPages }}</span>
+      <button
+        type="button"
+        class="btn"
+        v-bind:disabled="page >= totalPages"
+        v-on:click="page = page + 1">
+        Next
+      </button>
+    </div>
   </div>
   <Loader v-else-if="loading"/>
 </template>
@@ -70,6 +108,33 @@ export default {
   components: {
     Loader,
     Sort
+  },
+  data: function() {
+    return {
+      page: 1,
+      pageSize: 100
+    };
+  },
+  watch: {
+    embeds: function() {
+      this.page = 1;
+    }
+  },
+  computed: {
+    totalPages: function() {
+      return Math.max(1, Math.ceil(this.embeds.length / this.pageSize));
+    },
+    rangeStart: function() {
+      if (this.embeds.length === 0) return 0;
+      return (this.page - 1) * this.pageSize + 1;
+    },
+    rangeEnd: function() {
+      return Math.min(this.page * this.pageSize, this.embeds.length);
+    },
+    pagedEmbeds: function() {
+      const start = (this.page - 1) * this.pageSize;
+      return this.embeds.slice(start, start + this.pageSize);
+    }
   }
 };
 </script>
@@ -78,4 +143,15 @@ export default {
 <style scoped lang="scss">
 @import "../scss/_vars.scss";
 @import "../scss/_table.scss";
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.75rem 0;
+}
+
+.pagination__label {
+  font-size: 0.9rem;
+}
 </style>

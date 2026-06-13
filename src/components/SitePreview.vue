@@ -1,7 +1,7 @@
 <template>
   <div class="sites" v-if="loading == false">
     <h3>Sites</h3>
-    <p>{{ sites.length}} Found</p>
+    <p>{{ sites.length }} Found</p>
     <table class="sites__table">
       <thead>
         <th>ID
@@ -11,6 +11,14 @@
         <th>Name
           <Sort 
             v-bind:sortBy="'name'"
+            v-bind:type="'sites'"/></th>
+        <th v-if="showCandidateColumns">Inclusion pass
+          <Sort
+            v-bind:sortBy="'inclusionPass'"
+            v-bind:type="'sites'"/></th>
+        <th v-if="showCandidateColumns">Review status
+          <Sort
+            v-bind:sortBy="'reviewStatus'"
             v-bind:type="'sites'"/></th>
         <th>Views
           <Sort 
@@ -36,9 +44,22 @@
       <tbody>
         <tr
           v-for="site in sites"
+          v-bind:key="site.ID"
           v-bind:site="site">
           <td><router-link :to="{ name: 'site', params: { siteID: site.ID }}">{{ site.ID }}</router-link></td>
           <td><a :href="site.url" class="site__link">{{ site.name }}</a></td>
+          <td v-if="showCandidateColumns">{{ site.inclusionPass }}</td>
+          <td v-if="showCandidateColumns">
+            <select
+              v-if="site.isNewsCandidate"
+              v-bind:value="site.reviewStatus"
+              v-on:change="updateReviewStatus(site, $event.target.value)"
+              class="review-status-select">
+              <option value="pending">Pending</option>
+              <option value="confirmed_news">Confirmed news</option>
+              <option value="exclude">Exclude</option>
+            </select>
+          </td>
           <td>{{ site.views }}</td>
           <td>{{ site.embeds }}</td>
           <td>{{ site.quizzes }}</td>
@@ -61,12 +82,29 @@ export default {
     sites: Array,
     quizzes: Array,
     embeds: Array,
-    loading: Boolean
+    loading: Boolean,
+    showCandidateColumns: {
+      type: Boolean,
+      default: false
+    }
   },
   components: {
     Loader,
     Sort
   },
+  methods: {
+    updateReviewStatus(site, status) {
+      this.$store
+        .dispatch("setReviewStatus", {
+          siteID: site.ID,
+          normalizedHost: site.normalizedHost,
+          status
+        })
+        .catch(() => {
+          window.alert("Could not save review status. Please try again.");
+        });
+    }
+  }
 };
 </script>
 
@@ -75,4 +113,7 @@ export default {
 @import "../scss/_vars.scss";
 @import "../scss/_table.scss";
 
+.review-status-select {
+  max-width: 10rem;
+}
 </style>

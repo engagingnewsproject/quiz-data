@@ -15,57 +15,56 @@ This is a Vue.js application that serves as a dashboard for managing and viewing
      - `/enp-quiz/v1/quizzes`
      - `/enp-quiz/v1/embeds`
      - `/enp-quiz/v1/totals`
+     - `/enp-quiz/v1/news-candidates` (live SQL candidate list)
+     - `PATCH /enp-quiz/v1/news-candidates/{siteID}` (save review status)
 
-2. **Backend (WordPress REST API)**:
-   - The WordPress API on mediaengagement.org receives requests from the Vue app.
-   - It likely calls into a PHP backend (using `Route.php` and `DB.php`) to query the MySQL database (`cme_data`).
-   - The PHP backend returns the data to the API, which sends it back to the Vue app.
+2. **Backend (enp-quiz plugin)**:
+   - News candidates are computed from live SQL passes against embed tables (not a static JSON file).
+   - Review status (`pending`, `confirmed_news`, `exclude`) is stored in `wp_enp_news_candidate`.
 
 3. **Database**:
-   - The MySQL database (`cme_data`) stores all quiz, domain, site, and embed data.
-   - The PHP backend connects to the database using PDO, with connection details stored in `config.ini`.
+   - Embed/quiz data lives in the quiz MySQL database.
+   - Kat's review labels live in a separate annotation table; core embed data is never modified.
 
 ### Key Features
 
-- **Overview/Home**: Shows summary stats (responses, correct/incorrect, etc.).
+- **Overview/Home**: Shows summary stats including total embed sites, news candidates (~400), and confirmed news counts.
+- **Sites (News candidates)**: Default view shows filtered research candidates from the API. Toggle to "All embed sites" for the full list.
+- **Review workflow**: Mark each candidate in the dropdown; status is saved on the server. Export/Import CSV for backup reports.
 - **Domains/Sites/Quizzes/Embeds**: Each has a dedicated view with tables, filters, and sorting.
-- **Filtering/Sorting**: Users can filter and sort data in each view.
-- **Details**: Clicking on a domain, site, or quiz shows detailed stats and related items.
-- **Quiz Analytics**: Tracks views, starts, finishes, and calculates percentages.
+
+### News candidates
+
+Candidate membership is computed server-side by the **enp-quiz** plugin (SQL passes: high/low volume, Wicked Local, NBC, Gannett, Ideastream). The Vue app only displays what the API returns.
+
+**Kat workflow:** Open Sites → review candidates → set review status (saved automatically) → Export CSV for records.
 
 ## Project Structure
 
-- **`src/`**: Contains the Vue.js source code.
-  - **`store.js`**: Manages data fetching and state using Vuex.
-  - **`views/`**: Vue components for different views (Home, Domains, Sites, Quizzes, Embeds).
-  - **`components/`**: Reusable Vue components.
-  - **`router.js`**: Defines the app's routes.
-  - **`main.js`**: Entry point for the Vue app.
-- **`public/`**: Static assets (e.g., `index.html`).
-- **`package.json`**: Lists dependencies and scripts for building the app.
+- **`src/`**: Vue.js source code (`store.js`, `views/`, `components/`, `router.js`).
+- **`public/`**: Static assets (`index.html`).
+- **`package.json`**: Dependencies and build scripts.
 
 ## Development
 
-1. **Install Dependencies**:
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+npm run serve
+```
 
-2. **Run Development Server**:
-   ```bash
-   npm run serve
-   ```
+## Build for Production
 
-3. **Build for Production**:
-   ```bash
-   npm run build
-   ```
+```bash
+npm run build
+```
 
-## Deployment
+Deploy `dist/*` (HTML, CSS, JS only) to the `quiz-creator` directory on the server.
 
-The build output (compiled HTML, CSS, JS) is uploaded to the `quiz-creator` directory on the server.
+**Requires enp-quiz v1.3.0+** on mediaengagement.org with the `/news-candidates` API deployed first.
+
+For prod-parity local testing, copy `dist/*` to the enpdata Local site at `app/public/quiz-creator/` and open `http://localhost:10033/quiz-creator/#/`.
 
 ## Notes
 
-- The app does not pull data directly from the database. It pulls data from the WordPress REST API on mediaengagement.org.
-- The PHP backend (using `Route.php` and `DB.php`) is responsible for querying the database and returning data to the API. 
+- The app does not pull data directly from the database. All data comes through the WordPress REST API.
+- News candidate rules live in the enp-quiz plugin (`includes/class-enp_quiz-news-candidates.php`), not in this repo.
