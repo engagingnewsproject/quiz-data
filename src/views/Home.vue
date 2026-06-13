@@ -1,10 +1,6 @@
 <template>
   <div class="home-view"  v-if="loading == false">
-    <Overview
-      v-bind:sites="sites"
-      v-bind:embeds="embeds"
-      v-bind:quizzes="quizzes"
-      v-bind:loading="loading"></Overview>
+    <Overview></Overview>
   </div>
   <Loader v-else-if="loading"></Loader>
 
@@ -38,18 +34,23 @@ export default {
   },
   methods: {
     fetchData() {
-      if(this.sites.length == 0) {
-        this.loading = true
-        console.log('fetching data')
-        return this.$store.dispatch("fetchAllData").then(() => this.loading = false);
-      } else {
-        console.log('already have data')
-        this.loading = false
+      const totalsReady = this.totals && this.totals.responses;
+      if (this.sites.length === 0 || !totalsReady) {
+        this.loading = true;
+        return this.$store
+          .dispatch("fetchAllData")
+          .then(() => {
+            this.loading = false;
+          })
+          .catch(() => {
+            this.loading = false;
+          });
       }
+      this.loading = false;
     }
   },
   computed: {
-    ...mapGetters(["error", "sites", "quizzes", "nonDevSites", "embeds"])
+    ...mapGetters(["error", "sites", "quizzes", "nonDevSites", "embeds", "totals"])
   }
 
 };

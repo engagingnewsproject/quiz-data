@@ -1,16 +1,15 @@
 import Vue from "vue";
 import Vuex from "vuex";
 import Axios from "axios";
+import { normalizeHost } from "@/utils/hosts";
 
 Vue.use(Vuex);
 
 const server = Axios.create({
   baseURL:
-    (/(?:localhost:8080|.+\.test)/.test(
-      window.location.host
-    ) === false
-      ? "https://mediaengagement.org"
-      : "https://quiz.test") + "/wp-json",
+    (/\.test$/i.test(window.location.hostname)
+      ? "https://quiz.test"
+      : "https://mediaengagement.org") + "/wp-json",
   timeout: 10000
 });
 
@@ -23,8 +22,9 @@ export default new Vuex.Store({
     domains: [],
     sites: [],
     quizzes: [],
-    totals: [],
-    embeds: []
+    totals: {},
+    embeds: [],
+    newsCandidatesMeta: null
   },
   mutations: {
     setError: function(state, val) {
@@ -55,6 +55,9 @@ export default new Vuex.Store({
     setTotals: function(state, totals) {
       console.log("totals set")
       state.totals = totals
+    },
+    setNewsCandidatesMeta: function(state, meta) {
+      state.newsCandidatesMeta = meta
     }
   },
   getters: {
@@ -229,16 +232,116 @@ export default new Vuex.Store({
       return getters.indexBy(getters.domains, name, val);
     },
     sites: state => state.sites,
+    newsCandidatesMeta: state => state.newsCandidatesMeta,
+    candidateByEmbedId: (state) => {
+      const map = {};
+      const candidates =
+        (state.newsCandidatesMeta && state.newsCandidatesMeta.candidates) ||
+        {};
+      Object.keys(candidates).forEach((host) => {
+        const c = candidates[host];
+        if (c.embedSiteId) {
+          map[c.embedSiteId] = { ...c, normalizedHost: host };
+        }
+      });
+      return map;
+    },
+    enrichedSites: (state, getters) => {
+      const candidates =
+        (state.newsCandidatesMeta && state.newsCandidatesMeta.candidates) ||
+        {};
+      const byId = getters.candidateByEmbedId;
+
+      return state.sites.map((site) => {
+        const normalizedHost = normalizeHost(site.url);
+        let hostKey = normalizedHost;
+        let meta = candidates[normalizedHost];
+
+        if (!meta && byId[site.ID]) {
+          meta = byId[site.ID];
+          hostKey = meta.normalizedHost || normalizedHost;
+        }
+
+        const isNewsCandidate = !!meta;
+        const reviewStatus = isNewsCandidate
+          ? meta.reviewStatus || "pending"
+          : "";
+
+        return {
+          ...site,
+          normalizedHost: hostKey,
+          inclusionPass: meta ? meta.inclusionPass : "",
+          reviewStatus,
+          candidateNotes: meta ? meta.notes : "",
+          ownerCount: meta ? meta.ownerCount : null,
+          isNewsCandidate
+        };
+      });
+    },
+    newsCandidateSites: (state, getters) => {
+      const candidates = getters.enrichedSites.filter(
+        (site) => site.isNewsCandidate
+      );
+      const byHost = {};
+
+      candidates.forEach((site) => {
+        const host = site.normalizedHost;
+        if (
+          !byHost[host] ||
+          site.quizzes > byHost[host].quizzes ||
+          (site.quizzes === byHost[host].quizzes && site.views > byHost[host].views)
+        ) {
+          byHost[host] = site;
+        }
+      });
+
+      return Object.values(byHost);
+    },
+    confirmedNewsSites: (state, getters) => {
+      return getters.newsCandidateSites.filter(
+        (site) => site.reviewStatus === "confirmed_news"
+      );
+    },
+    excludedNewsSites: (state, getters) => {
+      return getters.newsCandidateSites.filter(
+        (site) => site.reviewStatus === "exclude"
+      );
+    },
+    pendingNewsSites: (state, getters) => {
+      return getters.newsCandidateSites.filter(
+        (site) => site.reviewStatus === "pending"
+      );
+    },
+    unmatchedCandidateCount: (state, getters) => {
+      const candidates =
+        (state.newsCandidatesMeta && state.newsCandidatesMeta.candidates) ||
+        {};
+      const matchedHosts = new Set(
+        getters.newsCandidateSites.map((s) => s.normalizedHost)
+      );
+      return Object.keys(candidates).filter((h) => !matchedHosts.has(h)).length;
+    },
+    siteListCounts: (state, getters) => ({
+      total: state.sites.length,
+      nonDev: getters.nonDevSites.length,
+      candidates: getters.newsCandidateSites.length,
+      confirmed: getters.confirmedNewsSites.length,
+      pending: getters.pendingNewsSites.length,
+      excluded: getters.excludedNewsSites.length,
+      unmatchedCandidates: getters.unmatchedCandidateCount
+    }),
     getSite: (state, getters) => ID => {
-      return getters.sites[getters.siteIndexBy('ID', ID)];
+      const idx = getters.siteIndexBy("ID", ID);
+      if (idx === undefined) return undefined;
+      return getters.enrichedSites[idx];
     },
     siteIndexBy: (state, getters) => (name, val) => {
       return getters.indexBy(getters.sites, name, val);
     },
     nonDevSites: (state, getters) => {
-      return  getters.sites.filter(function(site) {
-        return site.isDev.includes('0')
-      })
+      return getters.sites.filter(function(site) {
+        return site.isDev == 0 || site.isDev === "0";
+      });
     },
     getSiteQuizzes: (state, getters) => (siteID) => {
       let quizzes = []
@@ -295,14 +398,71 @@ export default new Vuex.Store({
       context.commit("setSitePosts", val);
     },
     fetchAllData(context) {
-      
-      return context.dispatch("fetchSites")
+      return Promise.all([
+        context.dispatch("fetchNewsCandidates"),
+        context.dispatch("fetchSites")
+      ])
       .then(() => context.dispatch("fetchQuizzes"))
       .then(() => context.dispatch("fetchEmbeds"))
       .then(() => context.dispatch("fetchDomains"))
-      .then(() => context.dispatch("fetchTotals"))
-              
-      
+      .then(() => context.dispatch("fetchTotals"));
+    },
+    fetchNewsCandidates(context) {
+      if (context.state.newsCandidatesMeta) {
+        return Promise.resolve();
+      }
+
+      return context.getters
+        .server("/enp-quiz/v1/news-candidates")
+        .then((response) => {
+          context.commit("setNewsCandidatesMeta", response.data);
+        })
+        .catch((error) => {
+          console.error("Failed to load news candidates", error);
+        });
+    },
+    setReviewStatus(context, { siteID, normalizedHost, status }) {
+      return context.getters
+        .server.patch(`/enp-quiz/v1/news-candidates/${siteID}`, {
+          review_status: status,
+          normalized_host: normalizedHost
+        })
+        .then(() => {
+          const meta = context.state.newsCandidatesMeta;
+          if (!meta || !meta.candidates) {
+            return;
+          }
+          const updated = {
+            ...meta,
+            candidates: { ...meta.candidates }
+          };
+          if (updated.candidates[normalizedHost]) {
+            updated.candidates[normalizedHost] = {
+              ...updated.candidates[normalizedHost],
+              reviewStatus: status
+            };
+          }
+          context.commit("setNewsCandidatesMeta", updated);
+        });
+    },
+    importReviewStatusFromCsv(context, rows) {
+      const patches = rows
+        .map((row) => {
+          const host = (row.normalized_host || "").trim();
+          const status = (row.review_status || "").trim();
+          const siteID = parseInt(row.embed_site_id, 10);
+          if (!host || !status || !siteID) {
+            return null;
+          }
+          return context.dispatch("setReviewStatus", {
+            siteID,
+            normalizedHost: host,
+            status
+          });
+        })
+        .filter(Boolean);
+
+      return Promise.all(patches);
     },
     fetchDomains(context) {
       console.log("fetching domains");
@@ -395,6 +555,9 @@ export default new Vuex.Store({
             }
             // find the site
             siteIndex = context.getters.siteIndexBy('ID', embeds[i].siteID)
+            if (siteIndex === undefined) {
+              continue
+            }
             // is this quiz in the site quizzes array already?
             if(!sites[siteIndex].quizIDs.includes(embeds[i].quizID)) {
               sites[siteIndex].quizIDs.push(embeds[i].quizID)
